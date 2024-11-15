@@ -41,11 +41,17 @@ io.use((socket, next) => {
     }
 });
 
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
     userSocketMap.set(socket.id, socket.userId);
     console.log(
         `User  connected: ${socket.userId} with socket ID: ${socket.id}`
     );
+
+    await User.findByIdAndUpdate(userId, { isOnline: true });
+    socket.broadcast.emit('user-status-changed', {
+        userID: socket.userId,
+        isOnline: true,
+    });
 
     socket.on('send-message', async ({ message, to, media }) => {
         try {
@@ -85,11 +91,18 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
         userSocketMap.delete(socket.id);
+        await User.findByIdAndUpdate(userId, {
+            isOnline: false,
+        });
         console.log(
             `User  disconnected: ${socket.userId} with socket ID: ${socket.id}`
         );
+        socket.broadcast.emit('user-status-changed', {
+            userId: socket.userId,
+            isOnline: false,
+        });
     });
 });
 
