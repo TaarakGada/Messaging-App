@@ -7,7 +7,7 @@ import { User } from '../models/user.model';
 
 const getConversationHistory = asyncHandler(async (req, res) => {
     const { userId } = req.user?._id;
-    const { receiverId } = req.params;
+    const { receiverId } = req.body;
 
     if (!userId) {
         throw new ApiError(400, 'User ID not found.');

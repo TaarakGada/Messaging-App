@@ -8,6 +8,7 @@ import { Server } from 'socket.io';
 import { createServer } from 'http';
 import crypto from 'crypto';
 import { Message } from './models/message.model.js';
+import chatRouter from './routes/chat.routes.js';
 
 dotenv.config({
     path: '.env',
@@ -92,17 +93,16 @@ io.on('connection', async (socket) => {
     });
 
     socket.on('disconnect', async () => {
-        userSocketMap.delete(socket.id);
-        await User.findByIdAndUpdate(userId, {
-            isOnline: false,
-        });
-        console.log(
-            `User  disconnected: ${socket.userId} with socket ID: ${socket.id}`
-        );
-        socket.broadcast.emit('user-status-changed', {
-            userId: socket.userId,
-            isOnline: false,
-        });
+        setTimeout(async () => {
+            if (!userSocketMap.has(socket.id)) {
+                userSocketMap.delete(socket.id);
+                await User.findByIdAndUpdate(userId, { isOnline: false });
+                socket.broadcast.emit('user-status-changed', {
+                    userId: socket.userId,
+                    isOnline: false,
+                });
+            }
+        }, 5000);
     });
 });
 
@@ -137,4 +137,6 @@ app.use(express.static('public'));
 
 app.use(cookieParser());
 
+//routes
 app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/chat', chatRouter);
