@@ -32,14 +32,22 @@ const ChatInterface = () => {
         fetchMessages();
 
         if (socket) {
-            socket.on('receive-message', ({ message, from }) => {
+            socket.on('receive-message', ({ message, from, timestamp }) => {
+                console.log(
+                    'Received message:',
+                    message,
+                    'From:',
+                    from,
+                    'At:',
+                    timestamp
+                ); // Debugging line
                 if (from === id) {
                     setMessages((prev) => [
                         ...prev,
                         {
                             senderId: from,
                             text: message,
-                            timestamp: new Date(),
+                            timestamp: new Date(timestamp),
                         },
                     ]);
                     scrollToBottom();

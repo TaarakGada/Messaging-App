@@ -38,7 +38,8 @@ io.use((socket, next) => {
             if (err) {
                 return next(new Error('Authentication error'));
             }
-            socket.userId = decoded.userId;
+            console.log('Decoded JWT:', decoded);
+            socket.userId = decoded._id;
             next();
         });
     } else {
@@ -60,6 +61,10 @@ io.on('connection', async (socket) => {
 
     socket.on('send-message', async ({ message, to, media }) => {
         try {
+            if (!socket.userId) {
+                console.error('Socket userId is not defined');
+                return; // Make sure userId is available
+            }
             const ids = [socket.userId, to].sort();
             const concatenatedIds = ids.join('_');
 
@@ -69,7 +74,7 @@ io.on('connection', async (socket) => {
                 .digest('hex');
 
             const newMessage = new Message({
-                sender: socket.userId,
+                sender: socket.userId, // This should be set correctly now
                 receiver: to,
                 encryptedContent: message,
                 media: media || [],
@@ -77,7 +82,6 @@ io.on('connection', async (socket) => {
             });
 
             await newMessage.save();
-
             const receiverSocketId = Array.from(userSocketMap.entries()).find(
                 ([id, userId]) => userId === to
             )?.[0];
@@ -86,6 +90,7 @@ io.on('connection', async (socket) => {
                 socket.to(receiverSocketId).emit('receive-message', {
                     message,
                     from: socket.userId,
+                    timestamp: new Date().toISOString(),
                 });
             } else {
                 console.log(`User with ID ${to} is not connected.`);
