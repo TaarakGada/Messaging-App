@@ -101,11 +101,11 @@ const loginUser = asyncHandler(async (req, res) => {
     );
 
     const options = {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'Lax',
+        httpOnly: false,
+        secure: true, // Ensure it's true in production
+        sameSite: 'None', // Allow cross-origin cookies
         path: '/',
-        domain: '.netlify.app',
+        domain: '.example.com', // Adjust this for your shared domain
     };
 
     return res
@@ -135,11 +135,11 @@ const logoutUser = asyncHandler(async (req, res) => {
     );
 
     const options = {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'Lax',
+        httpOnly: false,
+        secure: true, // Ensure it's true in production
+        sameSite: 'None', // Allow cross-origin cookies
         path: '/',
-        domain: '.netlify.app',
+        domain: '.example.com', // Adjust this for your shared domain
     };
 
     res.status(200)
@@ -172,11 +172,11 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         }
 
         const options = {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'Lax',
+            httpOnly: false,
+            secure: true, // Ensure it's true in production
+            sameSite: 'None', // Allow cross-origin cookies
             path: '/',
-            domain: '.netlify.app',
+            domain: '.example.com', // Adjust this for your shared domain
         };
 
         const { accessToken, newrefreshToken } =
