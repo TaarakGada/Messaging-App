@@ -1,7 +1,6 @@
-// src/pages/Login.jsx
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../utils/axiosInstance';
 
 const Login = () => {
     const [formData, setFormData] = useState({
@@ -34,8 +33,8 @@ const Login = () => {
               };
 
         try {
-            const response = await axios.post(
-                'https://localhost:3000//api/v1/auth/login',
+            const response = await axiosInstance.post(
+                'auth/login',
                 requestData,
                 {
                     withCredentials: true,

@@ -1,7 +1,7 @@
 // src/pages/Signup.jsx
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../utils/axiosInstance';
 
 const Signup = () => {
     const [formData, setFormData] = useState({
@@ -55,7 +55,7 @@ const Signup = () => {
                 }
             });
 
-            await axios.post('your-api-endpoint/signup', submitData, {
+            await axiosInstance.post('auth/register', submitData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },

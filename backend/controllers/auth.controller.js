@@ -8,11 +8,8 @@ import jwt from 'jsonwebtoken';
 const generateAccessAndRefreshTokens = async (userId) => {
     try {
         const user = await User.findById(userId);
-        // console.log(user);
         const accessToken = user.generateAccessToken();
-        // console.log(accessToken);
         const refreshToken = user.generateRefreshToken();
-        // console.log(refreshToken);
         user.refreshToken = refreshToken;
         await user.save({ validateBeforeSave: false });
 
@@ -27,16 +24,6 @@ const generateAccessAndRefreshTokens = async (userId) => {
 };
 
 const registerUser = asyncHandler(async (req, res) => {
-    //get user details from frontend
-    //validation
-    //check if user exists
-    //check for images, check for avatat
-    //upload image to cloudinary
-    //create user object - create entry in db
-    //remove password and refresh token field from response
-    //check for user creation
-    //return response
-
     const { fullname, email, username, password } = req.body;
     if (
         [fullname, email, username, password].some(
@@ -85,14 +72,6 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const loginUser = asyncHandler(async (req, res) => {
-    //get user details from frontend
-    //validation'
-    //check if user exists
-    //compare password
-    //generate token
-    //send cookies
-    //return response
-
     const { username, email, password } = req.body;
 
     if (!(username || email)) {
