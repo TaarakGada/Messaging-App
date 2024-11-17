@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSocket } from '../context/SocketContext';
 import axiosInstance from '../utils/axiosInstance';
 
 const ChatUsers = () => {
@@ -7,43 +8,47 @@ const ChatUsers = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    const { socket } = useSocket();
+
+    const fetchOnlineUsers = async () => {
+        try {
+            const response = await axiosInstance.get('/chat/getonlineusers', {
+                withCredentials: true,
+            });
+            console.log('Fetched users:', response.data);
+
+            if (response?.data?.data) {
+                setUsers(response.data.data);
+                setError('');
+            } else {
+                setUsers([]);
+            }
+        } catch (err) {
+            setError(
+                err.response?.data?.message ||
+                    'Failed to fetch online users. Please try again.'
+            );
+            setUsers([]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        let intervalId;
+        fetchOnlineUsers();
 
-        const fetchUsers = async () => {
-            try {
-                const response = await axiosInstance.get(
-                    '/chat/getonlineusers',
-                    {
-                        withCredentials: true,
-                    }
-                );
-                console.log('Fetched users:', response.data);
+        if (socket) {
+            socket.on('user-status-changed', () => {
+                fetchOnlineUsers();
+            });
+        }
 
-                if (response?.data?.data) {
-                    setUsers(response.data.data);
-                    setError('');
-                } else {
-                    setUsers([]);
-                }
-            } catch (err) {
-                setError(
-                    err.response?.data?.message ||
-                        'Failed to fetch online users. Please try again.'
-                );
-                setUsers([]);
-            } finally {
-                setIsLoading(false);
+        return () => {
+            if (socket) {
+                socket.off('user-status-changed');
             }
         };
-
-        fetchUsers();
-
-        intervalId = setInterval(fetchUsers, 30000);
-
-        return () => clearInterval(intervalId);
-    }, []);
+    }, [socket]);
 
     const handleUserClick = (userId) => {
         navigate(`/chat/${userId}`);
@@ -52,7 +57,6 @@ const ChatUsers = () => {
     return (
         <div className="min-h-screen bg-gray-900">
             <div className="max-w-4xl mx-auto p-6">
-                {/* Header */}
                 <div className="text-center mb-8">
                     <h2 className="text-3xl font-bold text-white">
                         Online Users
@@ -62,23 +66,17 @@ const ChatUsers = () => {
                     </p>
                 </div>
 
-                {/* Error Alert */}
                 {error && (
-                    <div
-                        className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-3 rounded-lg mb-6"
-                        role="alert"
-                    >
+                    <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-3 rounded-lg mb-6">
                         <span className="block sm:inline">{error}</span>
                     </div>
                 )}
 
-                {/* Loading State */}
                 {isLoading ? (
                     <div className="flex justify-center items-center h-48">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
                     </div>
                 ) : (
-                    /* Users List */
                     <div className="bg-gray-800 rounded-lg shadow-2xl overflow-hidden">
                         {users.length === 0 ? (
                             <div className="text-center py-12">
@@ -111,7 +109,6 @@ const ChatUsers = () => {
                                         className="hover:bg-gray-700 transition-colors cursor-pointer"
                                     >
                                         <div className="px-6 py-4 flex items-center space-x-4">
-                                            {/* User Avatar */}
                                             <div className="relative flex-shrink-0">
                                                 {user.avatar ? (
                                                     <img
@@ -141,16 +138,13 @@ const ChatUsers = () => {
                                                         </span>
                                                     </div>
                                                 )}
-                                                {/* Online Status Indicator */}
                                                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-gray-800"></div>
                                             </div>
-                                            {/* User Details */}
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-sm font-medium text-white truncate">
                                                     {user.username}
                                                 </p>
                                             </div>
-                                            {/* Chat Icon */}
                                             <div className="text-gray-400">
                                                 <svg
                                                     xmlns="http://www.w3.org/2000/svg"

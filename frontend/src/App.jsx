@@ -11,6 +11,7 @@ import Signup from './pages/Signup';
 import Chat from './pages/Chat';
 import ChatInterface from './pages/ChatInterface';
 import Cookies from 'js-cookie';
+import { SocketProvider } from './context/SocketContext';
 
 const App = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -48,77 +49,72 @@ const App = () => {
 
     return (
         <Router>
-            <div className="min-h-screen bg-gray-900">
-                <Routes>
-                    {/* Public Routes */}
-                    <Route
-                        path="/login"
-                        element={
-                            isAuthenticated ? (
+            <SocketProvider>
+                <div className="min-h-screen bg-gray-900">
+                    <Routes>
+                        <Route
+                            path="/login"
+                            element={
+                                isAuthenticated ? (
+                                    <Navigate
+                                        to="/chat"
+                                        replace
+                                    />
+                                ) : (
+                                    <Login />
+                                )
+                            }
+                        />
+                        <Route
+                            path="/signup"
+                            element={
+                                isAuthenticated ? (
+                                    <Navigate
+                                        to="/chat"
+                                        replace
+                                    />
+                                ) : (
+                                    <Signup />
+                                )
+                            }
+                        />
+                        <Route
+                            path="/chat"
+                            element={
+                                <ProtectedRoute>
+                                    <Chat />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/chat/:id"
+                            element={
+                                <ProtectedRoute>
+                                    <ChatInterface />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/"
+                            element={
                                 <Navigate
-                                    to="/chat"
+                                    to={isAuthenticated ? '/chat' : '/login'}
                                     replace
                                 />
-                            ) : (
-                                <Login />
-                            )
-                        }
-                    />
-                    <Route
-                        path="/signup"
-                        element={
-                            isAuthenticated ? (
+                            }
+                        />
+                        <Route
+                            path="*"
+                            element={
                                 <Navigate
-                                    to="/chat"
+                                    to={isAuthenticated ? '/chat' : '/login'}
                                     replace
                                 />
-                            ) : (
-                                <Signup />
-                            )
-                        }
-                    />
-
-                    {/* Protected Routes */}
-                    <Route
-                        path="/chat"
-                        element={
-                            <ProtectedRoute>
-                                <Chat />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/chat/:id"
-                        element={
-                            <ProtectedRoute>
-                                <ChatInterface />
-                            </ProtectedRoute>
-                        }
-                    />
-
-                    {/* Redirect root to login or chat based on auth status */}
-                    <Route
-                        path="/"
-                        element={
-                            <Navigate
-                                to={isAuthenticated ? '/chat' : '/login'}
-                                replace
-                            />
-                        }
-                    />
-
-                    {/* Catch all route - redirect to login or chat */}
-                    <Route
-                        path="*"
-                        element={
-                            <Navigate
-                                to={isAuthenticated ? '/chat' : '/login'}
-                                replace
-                            />
-                        }
-                    />
-                </Routes>
-            </div>
+                            }
+                        />
+                    </Routes>
+                </div>
+            </SocketProvider>
         </Router>
     );
 };

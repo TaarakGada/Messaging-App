@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
+import { useSocket } from '../context/SocketContext';
 import axiosInstance from '../utils/axiosInstance';
 
 const ChatInterface = () => {
@@ -8,13 +9,11 @@ const ChatInterface = () => {
     const [newMessage, setNewMessage] = useState('');
     const [error, setError] = useState('');
     const chatContainerRef = useRef(null);
-
-    const socket = null;
+    const { socket } = useSocket();
 
     useEffect(() => {
         const fetchMessages = async () => {
             try {
-                console.log('Sending receiverId:', id); // Debugging log
                 const response = await axiosInstance.post(
                     `/chat/getconversationhistory`,
                     { receiverId: id },
@@ -22,10 +21,7 @@ const ChatInterface = () => {
                 );
                 setMessages(response.data);
             } catch (err) {
-                console.error(
-                    'Error fetching conversation history:',
-                    err.response
-                );
+                console.error('Error fetching conversation history:', err);
                 setError(
                     err.response?.data?.message ||
                         'Failed to load conversation. Please try again.'
@@ -36,18 +32,25 @@ const ChatInterface = () => {
         fetchMessages();
 
         if (socket) {
-            socket.on('receiveMessage', (message) => {
-                setMessages((prevMessages) => [...prevMessages, message]);
-                scrollToBottom();
+            socket.on('receive-message', ({ message, from }) => {
+                if (from === id) {
+                    setMessages((prev) => [
+                        ...prev,
+                        {
+                            senderId: from,
+                            text: message,
+                            timestamp: new Date(),
+                        },
+                    ]);
+                    scrollToBottom();
+                }
             });
         }
 
         return () => {
-            if (socket) {
-                socket.off('receiveMessage');
-            }
+            if (socket) socket.off('receive-message');
         };
-    }, [id]);
+    }, [id, socket]);
 
     const scrollToBottom = () => {
         chatContainerRef.current?.scrollTo({
@@ -57,20 +60,22 @@ const ChatInterface = () => {
     };
 
     const sendMessage = async () => {
-        if (!newMessage.trim()) return;
+        if (!newMessage.trim() || !socket) return;
 
-        const messageData = {
-            senderId: 'your-user-id', // Replace with sender's ID
-            receiverId: id,
-            text: newMessage.trim(),
-            timestamp: new Date(),
-        };
+        const messageData = { message: newMessage.trim(), to: id };
 
         try {
-            setMessages((prevMessages) => [...prevMessages, messageData]); // Optimistic UI update
-            if (socket) {
-                socket.emit('sendMessage', messageData); // Replace with your emit logic
-            }
+            socket.emit('send-message', messageData);
+
+            setMessages((prev) => [
+                ...prev,
+                {
+                    senderId: 'your-user-id',
+                    text: newMessage.trim(),
+                    timestamp: new Date(),
+                },
+            ]);
+
             setNewMessage('');
             scrollToBottom();
         } catch (err) {
@@ -79,37 +84,33 @@ const ChatInterface = () => {
         }
     };
 
-    const copyToClipboard = (text) => {
-        navigator.clipboard.writeText(text).then(() => {
-            alert('Message copied to clipboard!');
-        });
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
     };
 
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
+    const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text).then(
+            () => console.log('Text copied to clipboard'),
+            (err) => console.error('Failed to copy text:', err)
+        );
+    };
 
     return (
         <div className="min-h-screen bg-gray-900">
             <div className="max-w-4xl mx-auto p-6">
-                {/* Header */}
                 <div className="text-center mb-6">
                     <h2 className="text-2xl font-bold text-white">
                         Chat with User {id}
                     </h2>
                 </div>
-
-                {/* Error Alert */}
                 {error && (
-                    <div
-                        className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-3 rounded-lg mb-6"
-                        role="alert"
-                    >
+                    <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-3 rounded-lg mb-6">
                         <span>{error}</span>
                     </div>
                 )}
-
-                {/* Chat Container */}
                 <div
                     className="bg-gray-800 rounded-lg shadow-xl overflow-y-auto h-96 p-4 mb-4"
                     ref={chatContainerRef}
@@ -178,8 +179,6 @@ const ChatInterface = () => {
                         </ul>
                     )}
                 </div>
-
-                {/* Input Section */}
                 <div className="flex items-center space-x-2">
                     <input
                         type="text"
@@ -187,6 +186,7 @@ const ChatInterface = () => {
                         className="flex-1 p-3 rounded-lg bg-gray-800 text-white focus:ring focus:ring-blue-500"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyPress={handleKeyPress} // Integrated here
                     />
                     <button
                         className="p-3 rounded-lg bg-blue-500 text-white hover:bg-blue-600"

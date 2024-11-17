@@ -7,28 +7,32 @@ import authRouter from './routes/auth.routes.js';
 import { Server } from 'socket.io';
 import { createServer } from 'http';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import { Message } from './models/message.model.js';
+import { User } from './models/user.model.js'; // Assuming you have a User model
 import chatRouter from './routes/chat.routes.js';
 
-dotenv.config({
-    path: '.env',
-});
+dotenv.config({ path: '.env' });
 
 const app = express();
-
 const server = createServer(app);
 
 const io = new Server(server, {
     cors: {
         origin: ['http://localhost:5173'],
         methods: ['GET', 'POST'],
+        credentials: true,
     },
 });
 
 const userSocketMap = new Map();
 
 io.use((socket, next) => {
-    const token = socket.handshake.query.token;
+    const token = socket.handshake.headers.cookie
+        ?.split('; ')
+        .find((row) => row.startsWith('accessToken='))
+        ?.split('=')[1];
+
     if (token) {
         jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
             if (err) {
@@ -45,12 +49,12 @@ io.use((socket, next) => {
 io.on('connection', async (socket) => {
     userSocketMap.set(socket.id, socket.userId);
     console.log(
-        `User  connected: ${socket.userId} with socket ID: ${socket.id}`
+        `User connected: ${socket.userId} with socket ID: ${socket.id}`
     );
 
-    await User.findByIdAndUpdate(userId, { isOnline: true });
+    await User.findByIdAndUpdate(socket.userId, { status: 'Online' });
     socket.broadcast.emit('user-status-changed', {
-        userID: socket.userId,
+        userId: socket.userId,
         isOnline: true,
     });
 
@@ -59,7 +63,7 @@ io.on('connection', async (socket) => {
             const ids = [socket.userId, to].sort();
             const concatenatedIds = ids.join('_');
 
-            conversationId = crypto
+            const conversationId = crypto
                 .createHash('sha256')
                 .update(concatenatedIds)
                 .digest('hex');
@@ -84,7 +88,7 @@ io.on('connection', async (socket) => {
                     from: socket.userId,
                 });
             } else {
-                console.log(`User  with ID ${to} is not connected.`);
+                console.log(`User with ID ${to} is not connected.`);
             }
         } catch (error) {
             console.error('Error saving message:', error);
@@ -93,10 +97,12 @@ io.on('connection', async (socket) => {
     });
 
     socket.on('disconnect', async () => {
+        userSocketMap.delete(socket.id);
         setTimeout(async () => {
-            if (!userSocketMap.has(socket.id)) {
-                userSocketMap.delete(socket.id);
-                await User.findByIdAndUpdate(userId, { isOnline: false });
+            if (![...userSocketMap.values()].includes(socket.userId)) {
+                await User.findByIdAndUpdate(socket.userId, {
+                    isOnline: false,
+                });
                 socket.broadcast.emit('user-status-changed', {
                     userId: socket.userId,
                     isOnline: false,
@@ -108,7 +114,7 @@ io.on('connection', async (socket) => {
 
 connectToDB()
     .then(() => {
-        app.listen(process.env.PORT || 7000, () => {
+        server.listen(process.env.PORT || 7000, () => {
             console.log(`Server is running on port ${process.env.PORT}`);
         });
     })
@@ -116,7 +122,7 @@ connectToDB()
 
 app.use(
     cors({
-        origin: 'http://localhost:5173',
+        origin: ['http://localhost:5173'],
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         allowedHeaders: ['Content-Type', 'Authorization'],
@@ -124,22 +130,11 @@ app.use(
     })
 );
 
-app.use(
-    express.json({
-        limit: '16kb',
-    })
-);
-
-app.use(
-    express.urlencoded({
-        extended: true,
-    })
-);
-
+app.use(express.json({ limit: '16kb' }));
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
-
 app.use(cookieParser());
 
-//routes
+// Routes
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/chat', chatRouter);
