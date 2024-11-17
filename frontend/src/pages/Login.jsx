@@ -49,8 +49,14 @@ const Login = () => {
                     'refreshToken',
                     response.data.refreshToken
                 );
-                Cookies.set('accessToken', response.data.accessToken);
-                Cookies.set('refreshToken', response.data.refreshToken);
+                Cookies.set(
+                    'accessToken',
+                    response.data.accessToken.toString()
+                );
+                Cookies.set(
+                    'refreshToken',
+                    response.data.refreshToken.toString()
+                );
                 navigate('/chat');
             }
         } catch (err) {
