@@ -37,12 +37,10 @@ const userSchema = new Schema(
             type: String,
         },
         publicKey: {
-            type: String,
-            required: true,
+            type: String, // Optional initially, set during `pre('save')`
         },
         privateKey: {
-            type: String,
-            required: true,
+            type: String, // Optional initially, set during `pre('save')`
         },
         friends: [
             {
@@ -58,29 +56,35 @@ const userSchema = new Schema(
     { timestamps: true }
 );
 
-// Hash the password before saving
+// Single `pre('save')` hook to handle both password hashing and key generation
 userSchema.pre('save', async function (next) {
-    if (this.isModified('password')) {
-        this.password = await bcrypt.hash(this.password, 10);
+    try {
+        // Hash the password if it has been modified
+        if (this.isModified('password')) {
+            this.password = await bcrypt.hash(this.password, 10);
+        }
+
+        // Generate public/private key pair if this is a new user
+        if (this.isNew) {
+            const { publicKey, privateKey } = crypto.generateKeyPairSync(
+                'rsa',
+                {
+                    modulusLength: 2048,
+                    publicKeyEncoding: { type: 'spki', format: 'pem' },
+                    privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+                }
+            );
+            this.publicKey = publicKey;
+            this.privateKey = privateKey; // Ensure this is stored securely
+        }
+
+        next();
+    } catch (error) {
+        next(error); // Pass any error to Mongoose
     }
-    next();
 });
 
-// Generate public/private key pair before saving a new user
-userSchema.pre('save', function (next) {
-    if (this.isNew) {
-        const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
-            modulusLength: 2048,
-            publicKeyEncoding: { type: 'spki', format: 'pem' },
-            privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
-        });
-        this.publicKey = publicKey;
-        this.privateKey = privateKey; // Store encrypted private key for security
-    }
-    next();
-});
-
-// Check password
+// Check if the provided password matches the hashed password
 userSchema.methods.isPasswordCorrect = async function (password) {
     return bcrypt.compare(password, this.password);
 };
@@ -99,6 +103,7 @@ userSchema.methods.generateAccessToken = function () {
     );
 };
 
+// Generate JWT refresh token
 userSchema.methods.generateRefreshToken = function () {
     return jwt.sign(
         {

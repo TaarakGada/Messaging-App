@@ -1,7 +1,8 @@
 import axios from 'axios';
+import Cookies from 'js-cookie';
 
 const axiosInstance = axios.create({
-    baseURL: 'https://localhost:3000/api/v1',
+    baseURL: 'http://localhost:3000/api/v1',
     withCredentials: true,
 });
 
@@ -21,16 +22,16 @@ axiosInstance.interceptors.response.use(
             originalRequest._retry = true;
 
             try {
-                await axios.post(
-                    '/auth/refreshAccessToken',
-                    {},
+                // Send the refresh token in the body
+                const refreshResponse = await axios.post(
+                    '/auth/refresh-token',
+                    { refreshToken: Cookies.get('refreshToken') }, // Send the refresh token
                     { withCredentials: true }
                 );
 
                 return axiosInstance(originalRequest);
             } catch (refreshError) {
                 console.error('Token refresh failed:', refreshError);
-
                 window.location.href = '/login';
             }
         }

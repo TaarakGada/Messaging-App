@@ -10,6 +10,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Chat from './pages/Chat';
 import ChatInterface from './pages/ChatInterface';
+import Cookies from 'js-cookie';
 
 const App = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -17,11 +18,11 @@ const App = () => {
 
     useEffect(() => {
         const checkAuth = () => {
-            const hasToken = document.cookie.includes('token=');
+            const accessToken = Cookies.get('accessToken');
+            const hasToken = Boolean(accessToken);
             setIsAuthenticated(hasToken);
             setIsLoading(false);
         };
-
         checkAuth();
     }, []);
 

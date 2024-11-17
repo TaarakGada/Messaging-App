@@ -7,7 +7,7 @@ import { verifyJWT } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
-router.route('getconversationhistory').post(verifyJWT, getConversationHistory);
-router.route('getonlineusers').get(getOnlineUsers);
+router.route('/getconversationhistory').post(verifyJWT, getConversationHistory);
+router.route('/getonlineusers').get(verifyJWT, getOnlineUsers);
 
 export default router;

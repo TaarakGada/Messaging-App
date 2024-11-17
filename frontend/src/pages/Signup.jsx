@@ -7,7 +7,7 @@ const Signup = () => {
     const [formData, setFormData] = useState({
         username: '',
         email: '',
-        fullName: '',
+        fullname: '',
         password: '',
         avatar: null,
     });
@@ -59,15 +59,15 @@ const Signup = () => {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
+                withCredentials: true,
             });
 
-            // Redirect to login after successful signup
             navigate('/login');
         } catch (err) {
-            setError(
+            const errorMessage =
                 err.response?.data?.message ||
-                    'An error occurred during signup. Please try again.'
-            );
+                'An error occurred during signup. Please try again.';
+            setError(errorMessage);
         } finally {
             setIsLoading(false);
         }
@@ -111,18 +111,18 @@ const Signup = () => {
                         {/* Full Name Field */}
                         <div>
                             <label
-                                htmlFor="fullName"
+                                htmlFor="fullname"
                                 className="block text-sm font-medium text-gray-300"
                             >
                                 Full Name
                             </label>
                             <div className="mt-1">
                                 <input
-                                    id="fullName"
-                                    name="fullName"
+                                    id="fullname"
+                                    name="fullname"
                                     type="text"
                                     required
-                                    value={formData.fullName}
+                                    value={formData.fullname}
                                     onChange={handleChange}
                                     className="appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                                     placeholder="Enter your full name"

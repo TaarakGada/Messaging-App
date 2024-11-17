@@ -1,53 +1,47 @@
-import { ApiError } from '../utils/APIError';
-import { asyncHandler } from '../utils/asynchandler';
-import { Message } from '../models/message.model';
-import { ApiResponse } from '../utils/APIResponse';
+import { ApiError } from '../utils/APIError.js';
+import { asyncHandler } from '../utils/asynchandler.js';
+import { Message } from '../models/message.model.js';
+import { ApiResponse } from '../utils/APIResponse.js';
 import crypto from 'crypto';
-import { User } from '../models/user.model';
+import { User } from '../models/user.model.js';
 
-const getConversationHistory = asyncHandler(async (req, res) => {
-    const { userId } = req.user?._id;
-    const { receiverId } = req.body;
+const getConversationHistory = async (req, res) => {
+    try {
+        const { receiverId } = req.body;
+        if (!receiverId) {
+            return res.status(400).json({ message: 'receiverId is required.' });
+        }
 
-    if (!userId) {
-        throw new ApiError(400, 'User ID not found.');
+        const conversation = await Message.find({
+            $or: [
+                { sender: req.userId, receiver: receiverId },
+                { sender: receiverId, receiver: req.userId },
+            ],
+        }).sort({ createdAt: 1 });
+
+        res.status(200).json(conversation);
+    } catch (error) {
+        console.error('Error fetching conversation history:', error);
+        res.status(500).json({ message: 'Server error occurred.' });
     }
-
-    if (!receiverId) {
-        throw new ApiError(400, 'Receiver ID not found.');
-    }
-
-    const ids = [userId, receiverId].sort();
-    const concatenatedIds = ids.join('_');
-
-    const conversationId = crypto
-        .createHash('sha256')
-        .update(concatenatedIds)
-        .digest('hex');
-
-    const messages = await Message.find({
-        conversationId,
-    }).sort({ createdAt: 1 });
-
-    return res.status(200).json(
-        new ApiResponse({
-            status: 200,
-            message: 'Conversation history',
-            data: messages,
-        })
-    );
-});
+};
 
 const getOnlineUsers = asyncHandler(async (req, res) => {
-    const users = await User.find({ isOnline: true }).select('name email');
+    const { _id: userId } = req.user;
+    const users = await User.find({
+        status: 'Online',
+        _id: { $ne: userId },
+    }).select('username avatar _id');
 
-    return res.status(200).json(
-        new ApiResponse({
-            status: 200,
-            message: 'Online users',
-            data: users,
-        })
-    );
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                'Online users excluding the current user',
+                users
+            )
+        );
 });
 
 export { getConversationHistory, getOnlineUsers };

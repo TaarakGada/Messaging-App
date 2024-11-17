@@ -101,8 +101,10 @@ const loginUser = asyncHandler(async (req, res) => {
     );
 
     const options = {
-        httpOnly: true,
-        secure: true,
+        httpOnly: false,
+        secure: false,
+        sameSite: 'Lax',
+        path: '/',
     };
 
     return res
@@ -136,8 +138,10 @@ const logoutUser = asyncHandler(async (req, res) => {
     );
 
     const options = {
-        httpOnly: true,
-        secure: true,
+        httpOnly: false,
+        secure: false,
+        sameSite: 'Lax',
+        path: '/',
     };
 
     res.status(200)
@@ -170,8 +174,10 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         }
 
         const options = {
-            httpOnly: true,
-            secure: true,
+            httpOnly: false,
+            secure: false,
+            sameSite: 'Lax',
+            path: '/',
         };
 
         const { accessToken, newrefreshToken } =

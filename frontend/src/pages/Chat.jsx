@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../utils/axiosInstance';
 
 const ChatUsers = () => {
     const [users, setUsers] = useState([]);
@@ -9,25 +9,38 @@ const ChatUsers = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
+        let intervalId;
+
         const fetchUsers = async () => {
             try {
-                const response = await axios.get(
-                    'your-api-endpoint/online-users'
+                const response = await axiosInstance.get(
+                    '/chat/getonlineusers',
+                    {
+                        withCredentials: true,
+                    }
                 );
-                setUsers(response.data);
+                console.log('Fetched users:', response.data);
+
+                if (response?.data?.data) {
+                    setUsers(response.data.data);
+                    setError('');
+                } else {
+                    setUsers([]);
+                }
             } catch (err) {
                 setError(
                     err.response?.data?.message ||
                         'Failed to fetch online users. Please try again.'
                 );
+                setUsers([]);
             } finally {
                 setIsLoading(false);
             }
         };
 
         fetchUsers();
-        // Set up polling to refresh online users
-        const intervalId = setInterval(fetchUsers, 30000); // Poll every 30 seconds
+
+        intervalId = setInterval(fetchUsers, 30000);
 
         return () => clearInterval(intervalId);
     }, []);
@@ -91,13 +104,15 @@ const ChatUsers = () => {
                             <ul className="divide-y divide-gray-700">
                                 {users.map((user) => (
                                     <li
-                                        key={user.id}
-                                        onClick={() => handleUserClick(user.id)}
+                                        key={user._id}
+                                        onClick={() =>
+                                            handleUserClick(user._id)
+                                        }
                                         className="hover:bg-gray-700 transition-colors cursor-pointer"
                                     >
                                         <div className="px-6 py-4 flex items-center space-x-4">
                                             {/* User Avatar */}
-                                            <div className="flex-shrink-0">
+                                            <div className="relative flex-shrink-0">
                                                 {user.avatar ? (
                                                     <img
                                                         src={user.avatar}
@@ -127,7 +142,7 @@ const ChatUsers = () => {
                                                     </div>
                                                 )}
                                                 {/* Online Status Indicator */}
-                                                <div className="absolute w-3 h-3 bg-green-500 rounded-full border-2 border-gray-800 -translate-y-10 translate-x-9"></div>
+                                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-gray-800"></div>
                                             </div>
                                             {/* User Details */}
                                             <div className="flex-1 min-w-0">

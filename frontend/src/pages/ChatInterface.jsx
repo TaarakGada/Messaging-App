@@ -1,35 +1,40 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../utils/axiosInstance';
 
 const ChatInterface = () => {
-    const { id } = useParams(); // User ID from the URL
+    const { id } = useParams();
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [error, setError] = useState('');
     const chatContainerRef = useRef(null);
 
-    // Placeholder for socket instance
-    const socket = null; // Replace with your Socket.IO logic
+    const socket = null;
 
-    // Fetch conversation history
     useEffect(() => {
         const fetchMessages = async () => {
             try {
-                const response = await axios.get(
-                    `your-api-endpoint/conversations/${id}`
+                console.log('Sending receiverId:', id); // Debugging log
+                const response = await axiosInstance.post(
+                    `/chat/getconversationhistory`,
+                    { receiverId: id },
+                    { withCredentials: true }
                 );
                 setMessages(response.data);
             } catch (err) {
+                console.error(
+                    'Error fetching conversation history:',
+                    err.response
+                );
                 setError(
                     err.response?.data?.message ||
                         'Failed to load conversation. Please try again.'
                 );
             }
         };
+
         fetchMessages();
 
-        // Placeholder for receiving messages via socket
         if (socket) {
             socket.on('receiveMessage', (message) => {
                 setMessages((prevMessages) => [...prevMessages, message]);
@@ -44,15 +49,13 @@ const ChatInterface = () => {
         };
     }, [id]);
 
-    // Scroll to bottom of chat container
     const scrollToBottom = () => {
-        if (chatContainerRef.current) {
-            chatContainerRef.current.scrollTop =
-                chatContainerRef.current.scrollHeight;
-        }
+        chatContainerRef.current?.scrollTo({
+            top: chatContainerRef.current.scrollHeight,
+            behavior: 'smooth',
+        });
     };
 
-    // Send message
     const sendMessage = async () => {
         if (!newMessage.trim()) return;
 
@@ -76,14 +79,12 @@ const ChatInterface = () => {
         }
     };
 
-    // Handle copy message
     const copyToClipboard = (text) => {
         navigator.clipboard.writeText(text).then(() => {
             alert('Message copied to clipboard!');
         });
     };
 
-    // Auto-scroll when messages update
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
