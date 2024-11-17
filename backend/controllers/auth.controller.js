@@ -105,7 +105,7 @@ const loginUser = asyncHandler(async (req, res) => {
         secure: true,
         sameSite: 'None',
         path: '/',
-        domain: 'messaging-app-taarak.netlify.app',
+        domain: '.netlify.app',
     };
 
     return res
@@ -143,7 +143,7 @@ const logoutUser = asyncHandler(async (req, res) => {
         secure: true,
         sameSite: 'None',
         path: '/',
-        domain: 'messaging-app-taarak.netlify.app',
+        domain: '.netlify.app',
     };
 
     res.status(200)
