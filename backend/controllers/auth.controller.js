@@ -180,7 +180,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
             secure: true,
             sameSite: 'None',
             path: '/',
-            domain: 'messaging-app-taarak.netlify.app',
+            domain: '.netlify.app',
         };
 
         const { accessToken, newrefreshToken } =
