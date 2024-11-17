@@ -103,7 +103,7 @@ const loginUser = asyncHandler(async (req, res) => {
     const options = {
         httpOnly: false,
         secure: true,
-        sameSite: 'None',
+        sameSite: 'Lax',
         path: '/',
         domain: '.netlify.app',
     };
@@ -141,7 +141,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     const options = {
         httpOnly: false,
         secure: true,
-        sameSite: 'None',
+        sameSite: 'Lax',
         path: '/',
         domain: '.netlify.app',
     };
@@ -178,7 +178,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         const options = {
             httpOnly: false,
             secure: true,
-            sameSite: 'None',
+            sameSite: 'Lax',
             path: '/',
             domain: '.netlify.app',
         };
