@@ -103,7 +103,7 @@ const loginUser = asyncHandler(async (req, res) => {
     const options = {
         httpOnly: false,
         secure: true,
-        sameSite: 'Strict',
+        sameSite: 'Production',
         path: '/',
     };
 
@@ -116,8 +116,8 @@ const loginUser = asyncHandler(async (req, res) => {
                 200,
                 {
                     user: loggedinUser,
-                    accessToken,
-                    refreshToken,
+                    // accessToken,
+                    // refreshToken,
                 },
                 'User logged in successfully.'
             )
@@ -140,7 +140,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     const options = {
         httpOnly: false,
         secure: true,
-        sameSite: 'Strict',
+        sameSite: 'Production',
         path: '/',
     };
 
@@ -176,7 +176,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         const options = {
             httpOnly: false,
             secure: true,
-            sameSite: 'Strict',
+            sameSite: 'Production',
             path: '/',
         };
 

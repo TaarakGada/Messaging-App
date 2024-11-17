@@ -20,7 +20,9 @@ const App = () => {
     useEffect(() => {
         const checkAuth = () => {
             const accessToken = Cookies.get('accessToken');
+            console.log('Access token:', accessToken);
             const hasToken = Boolean(accessToken);
+            console.log('Has token:', hasToken);
             setIsAuthenticated(hasToken);
             setIsLoading(false);
         };
