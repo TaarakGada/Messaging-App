@@ -113,15 +113,11 @@ const loginUser = asyncHandler(async (req, res) => {
         .cookie('accessToken', accessToken, options)
         .cookie('refreshToken', refreshToken, options)
         .json(
-            new ApiResponse(
-                200,
-                {
-                    user: loggedinUser,
-                    accessToken,
-                    refreshToken,
-                },
-                'User logged in successfully.'
-            )
+            new ApiResponse(200, 'User logged in successfully.', {
+                user: loggedinUser,
+                accessToken,
+                refreshToken,
+            })
         );
 });
 
@@ -149,7 +145,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     res.status(200)
         .clearCookie('accessToken', options)
         .clearCookie('refreshToken', options)
-        .json(new ApiResponse(200, {}, 'User logged out.'));
+        .json(new ApiResponse(200, 'User logged out.', {}));
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
@@ -191,11 +187,10 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
             .cookie('accessToken', accessToken, options)
             .cookie('refreshToken', newrefreshToken, options)
             .json(
-                new ApiResponse(
-                    200,
-                    { accessToken, refreshToken: newrefreshToken },
-                    'Access token refreshed.'
-                )
+                new ApiResponse(200, 'Access token refreshed.', {
+                    accessToken,
+                    refreshToken: newrefreshToken,
+                })
             );
     } catch (error) {
         throw new ApiError(401, error?.message || 'Invalid refresh token.');
@@ -214,14 +209,14 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 
     return res
         .status(200)
-        .json(new ApiResponse(200, {}, 'Password Changed Successfully!'));
+        .json(new ApiResponse(200, 'Password Changed Successfully!'));
 });
 
 const getCurrentUser = asyncHandler(async (req, res) => {
     return res
         .statur(200)
         .json(
-            new ApiResponse(200, req.user, 'Current user fetched successfully.')
+            new ApiResponse(200, 'Current user fetched successfully.', req.user)
         );
 });
 

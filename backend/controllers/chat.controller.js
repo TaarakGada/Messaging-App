@@ -19,7 +19,9 @@ const getConversationHistory = async (req, res) => {
             ],
         }).sort({ createdAt: 1 });
 
-        res.status(200).json(conversation);
+        res.status(200).json(
+            new ApiResponse(200, 'Conversation history', conversation)
+        );
     } catch (error) {
         console.error('Error fetching conversation history:', error);
         res.status(500).json({ message: 'Server error occurred.' });
