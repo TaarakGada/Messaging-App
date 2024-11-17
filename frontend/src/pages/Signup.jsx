@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axiosInstance from '../utils/axiosInstance';
+import Cookies from 'js-cookie';
 
 const Signup = () => {
     const [formData, setFormData] = useState({
@@ -55,14 +56,28 @@ const Signup = () => {
                 }
             });
 
-            await axiosInstance.post('auth/register', submitData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-                withCredentials: true,
-            });
+            const response = await axiosInstance.post(
+                'auth/register',
+                submitData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                    withCredentials: true,
+                }
+            );
 
-            navigate('/login');
+            if (response.data.statusCode === 200) {
+                console.log(response.data);
+                localStorage.setItem('accessToken', response.data.accessToken);
+                localStorage.setItem(
+                    'refreshToken',
+                    response.data.refreshToken
+                );
+                Cookies.set('accessToken', response.data.accessToken);
+                Cookies.set('refreshToken', response.data.refreshToken);
+                navigate('/chat');
+            }
         } catch (err) {
             const errorMessage =
                 err.response?.data?.message ||

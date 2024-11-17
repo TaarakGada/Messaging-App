@@ -44,7 +44,13 @@ const Login = () => {
 
             if (response.data.statusCode === 200) {
                 console.log(response.data);
-                console.log(Cookies.get('accessToken'));
+                localStorage.setItem('accessToken', response.data.accessToken);
+                localStorage.setItem(
+                    'refreshToken',
+                    response.data.refreshToken
+                );
+                Cookies.set('accessToken', response.data.accessToken);
+                Cookies.set('refreshToken', response.data.refreshToken);
                 navigate('/chat');
             }
         } catch (err) {
