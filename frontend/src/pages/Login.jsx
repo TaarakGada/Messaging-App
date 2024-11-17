@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axiosInstance from '../utils/axiosInstance';
+import Cookies from 'js-cookie';
 
 const Login = () => {
     const [formData, setFormData] = useState({
@@ -41,7 +42,9 @@ const Login = () => {
                 }
             );
 
-            if (response.data.token) {
+            if (response.data.statusCode === 200) {
+                console.log(response.data);
+                console.log(Cookies.get('accessToken'));
                 navigate('/chat');
             }
         } catch (err) {
