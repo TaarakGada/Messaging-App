@@ -2,7 +2,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 
 const axiosInstance = axios.create({
-    baseURL: 'http://localhost:3000/api/v1',
+    baseURL: 'https://messaging-app-test.onrender.com/api/v1',
     withCredentials: true,
 });
 

@@ -14,7 +14,7 @@ export const SocketProvider = ({ children }) => {
         const accessToken = Cookies.get('accessToken');
 
         if (accessToken) {
-            const newSocket = io('http://localhost:3000', {
+            const newSocket = io('https://messaging-app-test.onrender.com', {
                 withCredentials: true,
                 transports: ['polling', 'websocket'],
             });
