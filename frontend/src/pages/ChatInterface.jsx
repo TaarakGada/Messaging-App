@@ -19,7 +19,21 @@ const ChatInterface = () => {
                     { receiverId: id },
                     { withCredentials: true }
                 );
-                setMessages(response.data);
+
+                // Log the entire response to see its structure
+                console.log('Conversation History Response:', response.data);
+
+                // Ensure we're setting the correct part of the response
+                const messageData = response.data.data || response.data || [];
+
+                // Transform messages to match the expected format
+                const formattedMessages = messageData.map((msg) => ({
+                    senderId: msg.sender, // or msg.senderId depending on your API response
+                    text: msg.encryptedContent, // or msg.message
+                    timestamp: new Date(msg.createdAt || Date.now()),
+                }));
+
+                setMessages(formattedMessages);
             } catch (err) {
                 console.error('Error fetching conversation history:', err);
                 setError(
@@ -40,7 +54,7 @@ const ChatInterface = () => {
                     from,
                     'At:',
                     timestamp
-                ); // Debugging line
+                );
                 if (from === id) {
                     setMessages((prev) => [
                         ...prev,
