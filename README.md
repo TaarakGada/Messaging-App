@@ -63,7 +63,7 @@ npm install
 3. Create `.env` file with the following configuration:
 
 ```env
-MONGODB_URL=your_mongodc_connection_uri
+MONGODB_URL=your_mongodb_connection_uri
 ACCESS_TOKEN_SECRET=your_access_token_secret
 ACCESS_TOKEN_EXPIRY=1d
 REFRESH_TOKEN_SECRET=your_refresh_token_secret
