@@ -14,7 +14,6 @@ Real-time messaging application built with React, Express, and Socket.IO, enabli
 
 - React (v18.3.1)
 - React Router (v6.28.0)
-- Axios for HTTP requests
 - Tailwind CSS for styling
 - Socket.IO Client for real-time communication
 
@@ -24,8 +23,6 @@ Real-time messaging application built with React, Express, and Socket.IO, enabli
 - MongoDB with Mongoose
 - Socket.IO for WebSocket communication
 - JWT for authentication
-- Bcrypt for password hashing
-- Cloudinary for media uploads
 
 ## 📋 Prerequisites
 
@@ -47,8 +44,7 @@ cd frontend
 npm install
 ```
 
-4. Create `.env` file with necessary environment variables
-5. Run development server
+4. Run development server
 
 ```bash
 npm run dev
@@ -64,41 +60,66 @@ cd backend
 npm install
 ```
 
-3. Create `.env` file with:
-   - MONGODB_URI
-   - JWT_SECRET
-   - CLOUDINARY_CREDENTIALS
+3. Create `.env` file with the following configuration:
+
+```env
+MONGODB_URL=your_mongodc_connection_uri
+ACCESS_TOKEN_SECRET=your_access_token_secret
+ACCESS_TOKEN_EXPIRY=1d
+REFRESH_TOKEN_SECRET=your_refresh_token_secret
+REFRESH_TOKEN_EXPIRY=7d
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+```
+
 4. Start server
 
 ```bash
 npm start
 ```
 
-## 📦 Key Dependencies
+## 📦 Dependencies
 
-- Frontend: React, Axios, Socket.IO Client
-- Backend: Express, Mongoose, Socket.IO, JWT, Bcrypt
+### Frontend Dependencies
 
-## 🔒 Environment Variables
+- `axios@1.7.7`: HTTP client for API requests
+- `js-cookie@3.0.5`: Browser cookie handling
+- `react@18.3.1`: Core React library
+- `react-dom@18.3.1`: React DOM rendering
+- `react-router-dom@6.28.0`: Routing management
+- `socket.io-client@4.8.1`: Real-time communication
 
-- `VITE_API_URL`: Backend API endpoint
-- `MONGODB_URI`: Database connection string
-- `JWT_SECRET`: JSON Web Token secret
-- `CLOUDINARY_*`: Cloudinary configuration
+### Backend Dependencies
+
+- `bcrypt@5.1.1`: Password hashing
+- `cloudinary@2.5.1`: Cloud media management
+- `cookie-parser@1.4.7`: Cookie parsing middleware
+- `cors@2.8.5`: Cross-origin resource sharing
+- `dotenv@16.4.5`: Environment variable management
+- `express@4.21.1`: Web application framework
+- `jsonwebtoken@9.0.2`: Token-based authentication
+- `mongoose@8.8.1`: MongoDB object modeling
+- `multer@1.4.5-lts.1`: Multipart form data handling
+- `nodemon@3.1.7`: Development server auto-restart
+- `socket.io@4.8.1`: WebSocket communication
+
+## 📦 NPM Install Commands
+
+### Frontend
+
+```bash
+npm install axios js-cookie react react-dom react-router-dom socket.io-client
+```
+
+### Backend
+
+```bash
+npm install bcrypt cloudinary cookie-parser cors dotenv express jsonwebtoken mongoose multer nodemon socket.io
+```
 
 ## 👥 Authors
 
-- **Primary Developer**:
-- **Contributors**:
-
-## 📄 License
-
-[Your License Here - e.g., MIT]
-
-## 🐛 Issues
-
-Report issues at [Your GitHub Repository]/issues
-
-## 🤝 Contributions
-
-Contributions are welcome! Please read contribution guidelines before getting started.
+- **Taarak Gada**
+  - GitHub: [https://github.com/TaarakGada](https://github.com/TaarakGada)
+  - LinkedIn: [https://www.linkedin.com/in/taarak-gada-ab0107252/](https://www.linkedin.com/in/taarak-gada-ab0107252/)
