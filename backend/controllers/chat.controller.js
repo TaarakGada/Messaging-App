@@ -7,16 +7,22 @@ import { User } from '../models/user.model.js';
 
 const getConversationHistory = async (req, res) => {
     try {
+        const { _id: userId } = req.user;
         const { receiverId } = req.body;
+
         if (!receiverId) {
             return res.status(400).json({ message: 'receiverId is required.' });
         }
 
+        const ids = [userId, receiverId].sort();
+        const concatenatedIds = ids.join('_');
+        const conversationId = crypto
+            .createHash('sha256')
+            .update(concatenatedIds)
+            .digest('hex');
+
         const conversation = await Message.find({
-            $or: [
-                { sender: req.userId, receiver: receiverId },
-                { sender: receiverId, receiver: req.userId },
-            ],
+            conversationId: conversationId,
         }).sort({ createdAt: 1 });
 
         res.status(200).json(
