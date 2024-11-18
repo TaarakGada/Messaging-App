@@ -22,14 +22,16 @@ const App = () => {
             const accessToken =
                 localStorage.getItem('accessToken') ||
                 Cookies.get('accessToken');
-            console.log('Access token:', accessToken);
             const hasToken = Boolean(accessToken);
-            console.log('Has token:', hasToken);
             setIsAuthenticated(hasToken);
             setIsLoading(false);
         };
         checkAuth();
     }, []);
+
+    const handleLoginSuccess = () => {
+        setIsAuthenticated(true);
+    };
 
     if (isLoading) {
         return (
@@ -65,7 +67,9 @@ const App = () => {
                                         replace
                                     />
                                 ) : (
-                                    <Login />
+                                    <Login
+                                        onLoginSuccess={handleLoginSuccess}
+                                    />
                                 )
                             }
                         />

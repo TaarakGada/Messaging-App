@@ -1,9 +1,10 @@
+// src/pages/Login.jsx
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axiosInstance from '../utils/axiosInstance';
 import Cookies from 'js-cookie';
 
-const Login = () => {
+const Login = ({ onLoginSuccess }) => {
     const [formData, setFormData] = useState({
         userIdentifier: '',
         password: '',
@@ -43,9 +44,6 @@ const Login = () => {
             );
 
             if (response.data.statusCode === 200) {
-                console.log(response.data);
-                console.log(response.data.data.accessToken);
-                console.log(response.data.data.refreshToken);
                 localStorage.setItem(
                     'accessToken',
                     response.data.data.accessToken
@@ -56,6 +54,9 @@ const Login = () => {
                 );
                 Cookies.set('accessToken', response.data.data.accessToken);
                 Cookies.set('refreshToken', response.data.data.refreshToken);
+
+                // Call the onLoginSuccess prop to update the authentication state
+                onLoginSuccess();
                 navigate('/chat');
             }
         } catch (err) {
