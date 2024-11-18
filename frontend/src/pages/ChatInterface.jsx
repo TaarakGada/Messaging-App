@@ -4,13 +4,14 @@ import { useSocket } from '../context/SocketContext';
 import axiosInstance from '../utils/axiosInstance';
 
 const ChatInterface = () => {
-    const { id } = useParams();
+    const { id } = useParams(); // Receiver's ID from the URL
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [error, setError] = useState('');
     const chatContainerRef = useRef(null);
     const { socket } = useSocket();
 
+    // Fetch conversation history
     useEffect(() => {
         const fetchMessages = async () => {
             try {
@@ -20,17 +21,15 @@ const ChatInterface = () => {
                     { withCredentials: true }
                 );
 
-                // Log the entire response to see its structure
                 console.log('Conversation History Response:', response.data);
 
-                // Ensure we're setting the correct part of the response
-                const messageData = response.data.data || response.data || [];
+                const messageData = response.data.data || [];
 
-                // Transform messages to match the expected format
+                // Format fetched messages
                 const formattedMessages = messageData.map((msg) => ({
-                    senderId: msg.sender, // or msg.senderId depending on your API response
-                    text: msg.encryptedContent, // or msg.message
-                    timestamp: new Date(msg.createdAt || Date.now()),
+                    text: msg.encryptedContent,
+                    timestamp: new Date(msg.createdAt),
+                    isSent: msg.receiver === id, // Sent if `receiver` matches `id`
                 }));
 
                 setMessages(formattedMessages);
@@ -44,34 +43,30 @@ const ChatInterface = () => {
         };
 
         fetchMessages();
+    }, [id]);
 
+    // Real-time message listener
+    useEffect(() => {
         if (socket) {
-            socket.on('receive-message', ({ message, from, timestamp }) => {
-                console.log(
-                    'Received message:',
-                    message,
-                    'From:',
-                    from,
-                    'At:',
-                    timestamp
-                );
-                if (from === id) {
-                    setMessages((prev) => [
-                        ...prev,
-                        {
-                            senderId: from,
-                            text: message,
-                            timestamp: new Date(timestamp),
-                        },
-                    ]);
-                    scrollToBottom();
-                }
-            });
-        }
+            const handleMessageReceive = ({ message, to, timestamp }) => {
+                console.log('Received message:', message, 'To:', to);
 
-        return () => {
-            if (socket) socket.off('receive-message');
-        };
+                setMessages((prev) => [
+                    ...prev,
+                    {
+                        text: message,
+                        timestamp: new Date(timestamp),
+                        isSent: to === id, // Sent if `to` matches `receiverId`
+                    },
+                ]);
+
+                scrollToBottom();
+            };
+
+            socket.on('receive-message', handleMessageReceive);
+
+            return () => socket.off('receive-message', handleMessageReceive);
+        }
     }, [id, socket]);
 
     const scrollToBottom = () => {
@@ -92,9 +87,9 @@ const ChatInterface = () => {
             setMessages((prev) => [
                 ...prev,
                 {
-                    to: id,
                     text: newMessage.trim(),
                     timestamp: new Date(),
+                    isSent: true, // Mark as sent message
                 },
             ]);
 
@@ -147,14 +142,14 @@ const ChatInterface = () => {
                                 <li
                                     key={index}
                                     className={`flex items-start space-x-4 mb-4 ${
-                                        message.senderId === 'your-user-id'
+                                        message.isSent
                                             ? 'justify-end'
-                                            : ''
+                                            : 'justify-start'
                                     }`}
                                 >
                                     <div
                                         className={`p-3 rounded-lg text-sm shadow-md ${
-                                            message.senderId === 'your-user-id'
+                                            message.isSent
                                                 ? 'bg-blue-500 text-white'
                                                 : 'bg-gray-700 text-gray-200'
                                         }`}
@@ -186,14 +181,7 @@ const ChatInterface = () => {
                                             </button>
                                         </div>
                                         <div className="mt-1 text-xs text-gray-400">
-                                            {new Date(
-                                                message.timestamp
-                                            ).toLocaleTimeString()}
-                                            {message.read && (
-                                                <span className="ml-2 text-green-500">
-                                                    ✓ Read
-                                                </span>
-                                            )}
+                                            {message.timestamp.toLocaleTimeString()}
                                         </div>
                                     </div>
                                 </li>
@@ -208,7 +196,7 @@ const ChatInterface = () => {
                         className="flex-1 p-3 rounded-lg bg-gray-800 text-white focus:ring focus:ring-blue-500"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyPress={handleKeyPress} // Integrated here
+                        onKeyPress={handleKeyPress}
                     />
                     <button
                         className="p-3 rounded-lg bg-blue-500 text-white hover:bg-blue-600"
