@@ -44,15 +44,18 @@ const Login = () => {
 
             if (response.data.statusCode === 200) {
                 console.log(response.data);
-                console.log(response.data.accessToken);
-                console.log(response.data.refreshToken);
-                localStorage.setItem('accessToken', response.data.accessToken);
+                console.log(response.data.data.accessToken);
+                console.log(response.data.data.refreshToken);
+                localStorage.setItem(
+                    'accessToken',
+                    response.data.data.accessToken
+                );
                 localStorage.setItem(
                     'refreshToken',
-                    response.data.refreshToken
+                    response.data.data.refreshToken
                 );
-                Cookies.set('accessToken', response.data.accessToken);
-                Cookies.set('refreshToken', response.data.refreshToken);
+                Cookies.set('accessToken', response.data.data.accessToken);
+                Cookies.set('refreshToken', response.data.data.refreshToken);
                 navigate('/chat');
             }
         } catch (err) {
