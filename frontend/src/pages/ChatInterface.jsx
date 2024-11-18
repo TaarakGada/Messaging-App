@@ -92,7 +92,7 @@ const ChatInterface = () => {
             setMessages((prev) => [
                 ...prev,
                 {
-                    senderId: 'your-user-id',
+                    to: id,
                     text: newMessage.trim(),
                     timestamp: new Date(),
                 },
