@@ -56,7 +56,7 @@ const ChatInterface = () => {
                     {
                         text: message,
                         timestamp: new Date(timestamp),
-                        isSent: to === id, // Sent if `to` matches `receiverId`
+                        isSent: to === id,
                     },
                 ]);
 
@@ -89,7 +89,7 @@ const ChatInterface = () => {
                 {
                     text: newMessage.trim(),
                     timestamp: new Date(),
-                    isSent: true, // Mark as sent message
+                    isSent: true,
                 },
             ]);
 

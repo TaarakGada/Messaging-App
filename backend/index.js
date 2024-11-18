@@ -76,49 +76,61 @@ io.use((socket, next) => {
 });
 
 io.on('connection', async (socket) => {
-    userSocketMap.set(socket.id, socket.userId);
-    console.log(
-        `User connected: ${socket.userId} with socket ID: ${socket.id}`
-    );
+    const userId = socket.userId;
 
-    await User.findByIdAndUpdate(socket.userId, { status: 'Online' });
+    // Add the socket ID to the user's list of sockets
+    if (!userSocketMap.has(userId)) {
+        userSocketMap.set(userId, new Set());
+    }
+    userSocketMap.get(userId).add(socket.id);
+
+    console.log(`User connected: ${userId} with socket ID: ${socket.id}`);
+
+    // Update user status to online
+    await User.findByIdAndUpdate(userId, { status: 'Online' });
     socket.broadcast.emit('user-status-changed', {
-        userId: socket.userId,
+        userId,
         isOnline: true,
     });
 
+    // Handle sending messages
     socket.on('send-message', async ({ message, to, media }) => {
         try {
-            if (!socket.userId) {
+            if (!userId) {
                 console.error('Socket userId is not defined');
-                return; // Make sure userId is available
+                return;
             }
-            const ids = [socket.userId, to].sort();
-            const concatenatedIds = ids.join('_');
 
+            // Generate conversation ID based on sorted user IDs
+            const ids = [userId, to].sort();
+            const concatenatedIds = ids.join('_');
             const conversationId = crypto
                 .createHash('sha256')
                 .update(concatenatedIds)
                 .digest('hex');
 
+            // Save the message to the database
             const newMessage = new Message({
-                sender: socket.userId, // This should be set correctly now
+                sender: userId,
                 receiver: to,
                 encryptedContent: message,
                 media: media || [],
-                conversationId: conversationId,
+                conversationId,
             });
 
             await newMessage.save();
-            const receiverSocketId = Array.from(userSocketMap.entries()).find(
-                ([id, userId]) => userId === to
-            )?.[0];
 
-            if (receiverSocketId) {
-                socket.to(receiverSocketId).emit('receive-message', {
-                    message,
-                    from: socket.userId,
-                    timestamp: new Date().toISOString(),
+            // Get all active sockets for the receiver
+            const recipientSockets = userSocketMap.get(to);
+
+            if (recipientSockets) {
+                // Emit the message to all receiver sockets
+                recipientSockets.forEach((socketId) => {
+                    socket.to(socketId).emit('receive-message', {
+                        message,
+                        from: userId,
+                        timestamp: new Date().toISOString(),
+                    });
                 });
             } else {
                 console.log(`User with ID ${to} is not connected.`);
@@ -129,19 +141,26 @@ io.on('connection', async (socket) => {
         }
     });
 
+    // Handle disconnection
     socket.on('disconnect', async () => {
-        userSocketMap.delete(socket.id);
-        setTimeout(async () => {
-            if (![...userSocketMap.values()].includes(socket.userId)) {
-                await User.findByIdAndUpdate(socket.userId, {
-                    isOnline: false,
-                });
+        const userSockets = userSocketMap.get(userId);
+
+        if (userSockets) {
+            userSockets.delete(socket.id); // Remove the disconnected socket
+            if (userSockets.size === 0) {
+                // If no sockets remain, mark the user as offline
+                userSocketMap.delete(userId);
+
+                await User.findByIdAndUpdate(userId, { status: 'Offline' });
                 socket.broadcast.emit('user-status-changed', {
-                    userId: socket.userId,
+                    userId,
                     isOnline: false,
                 });
             }
-        }, 5000);
+        }
+        console.log(
+            `User disconnected: ${userId} with socket ID: ${socket.id}`
+        );
     });
 });
 
