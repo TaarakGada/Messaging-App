@@ -25,28 +25,60 @@ const io = new Server(server, {
         ],
         methods: ['GET', 'POST'],
         credentials: true,
+        allowedHeaders: ['Authorization', 'Cookie', 'Content-Type'],
     },
 });
 
 const userSocketMap = new Map();
 
 io.use((socket, next) => {
-    const token = socket.handshake.headers.cookie
-        ?.split('; ')
-        .find((row) => row.startsWith('accessToken='))
-        ?.split('=')[1];
+    try {
+        // Check for token in Authorization header first
+        let token = socket.handshake.headers.authorization?.split(' ')[1];
 
-    if (token) {
+        // If no token in Authorization header, check cookies
+        if (!token) {
+            // Log all headers to debug
+            console.log('Socket Handshake Headers:', socket.handshake.headers);
+
+            // Try different cookie parsing methods
+            const cookieHeader = socket.handshake.headers.cookie;
+
+            if (cookieHeader) {
+                // Method 1: Standard cookie parsing
+                token = cookieHeader
+                    .split('; ')
+                    .find((row) => row.startsWith('accessToken='))
+                    ?.split('=')[1];
+
+                // Method 2: If first method fails, try using cookie library
+                if (!token) {
+                    const cookieParser = require('cookie');
+                    const cookies = cookieParser.parse(cookieHeader);
+                    token = cookies.accessToken;
+                }
+            }
+        }
+
+        if (!token) {
+            console.error('No token found in headers or cookies');
+            return next(new Error('No token provided'));
+        }
+
+        // Verify the token
         jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
             if (err) {
+                console.error('JWT Verification Error:', err);
                 return next(new Error('Authentication error'));
             }
+
             console.log('Decoded JWT:', decoded);
             socket.userId = decoded._id;
             next();
         });
-    } else {
-        next(new Error('No token provided'));
+    } catch (error) {
+        console.error('Socket Authentication Middleware Error:', error);
+        next(new Error('Authentication process failed'));
     }
 });
 
