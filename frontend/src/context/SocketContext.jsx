@@ -10,16 +10,19 @@ export const SocketProvider = ({ children }) => {
     const [socket, setSocket] = useState(null);
 
     useEffect(() => {
-        const accessToken = Cookies.get('accessToken');
+        // Fetch the token from both cookies and local storage
+        const accessToken =
+            Cookies.get('accessToken') || localStorage.getItem('accessToken');
+
         if (accessToken) {
             const newSocket = io('https://messaging-app-test.onrender.com', {
                 withCredentials: true,
                 transports: ['websocket', 'polling'],
                 auth: {
-                    token: accessToken,
+                    token: accessToken, // Token passed to Socket.IO server
                 },
                 headers: {
-                    Authorization: `Bearer ${accessToken}`,
+                    Authorization: `Bearer ${accessToken}`, // Token included in headers
                 },
             });
 
@@ -37,8 +40,10 @@ export const SocketProvider = ({ children }) => {
             return () => {
                 newSocket.disconnect();
             };
+        } else {
+            console.warn('No access token found in cookies or local storage.');
         }
-    }, []);
+    }, []); // Empty dependency array ensures the effect runs only once
 
     return (
         <SocketContext.Provider value={{ socket }}>
