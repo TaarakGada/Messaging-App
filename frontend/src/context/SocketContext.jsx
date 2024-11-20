@@ -9,20 +9,16 @@ export const useSocket = () => useContext(SocketContext);
 export const SocketProvider = ({ children }) => {
     const [socket, setSocket] = useState(null);
 
-    useEffect(() => {
-        // Fetch the token from both cookies and local storage
-        const accessToken =
-            Cookies.get('accessToken') || localStorage.getItem('accessToken');
-
-        if (accessToken) {
+    const initializeSocket = (token) => {
+        if (token) {
             const newSocket = io('https://messaging-app-test.onrender.com', {
                 withCredentials: true,
                 transports: ['websocket', 'polling'],
                 auth: {
-                    token: accessToken, // Token passed to Socket.IO server
+                    token,
                 },
                 headers: {
-                    Authorization: `Bearer ${accessToken}`, // Token included in headers
+                    Authorization: `Bearer ${token}`,
                 },
             });
 
@@ -32,18 +28,39 @@ export const SocketProvider = ({ children }) => {
 
             newSocket.on('connect_error', (error) => {
                 console.error('Socket connection error:', error);
-                console.error('Error details:', error.message);
             });
 
             setSocket(newSocket);
 
-            return () => {
-                newSocket.disconnect();
-            };
-        } else {
-            console.warn('No access token found in cookies or local storage.');
+            return newSocket;
         }
-    }, []); // Empty dependency array ensures the effect runs only once
+    };
+
+    useEffect(() => {
+        const accessToken =
+            Cookies.get('accessToken') || localStorage.getItem('accessToken');
+
+        // Initialize socket on first render or when token changes
+        const newSocket = initializeSocket(accessToken);
+
+        return () => {
+            if (newSocket) newSocket.disconnect();
+        };
+    }, []);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const accessToken =
+                Cookies.get('accessToken') ||
+                localStorage.getItem('accessToken');
+            if (!socket && accessToken) {
+                console.log('Reinitializing socket after token retrieval.');
+                initializeSocket(accessToken);
+            }
+        }, 1000); // Retry every 1 second if the socket is missing and the token exists
+
+        return () => clearInterval(interval); // Clean up the interval on unmount
+    }, [socket]);
 
     return (
         <SocketContext.Provider value={{ socket }}>
