@@ -11,7 +11,15 @@ const Login = ({ onLoginSuccess }) => {
     });
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isCookieAllowed, setIsCookieAllowed] = useState(false);
     const navigate = useNavigate();
+
+    const handleCookiePermission = () => {
+        const allowCookies = window.confirm(
+            'This app requires permission to store cookies for authentication. Do you agree?'
+        );
+        setIsCookieAllowed(allowCookies);
+    };
 
     const handleChange = (e) => {
         setFormData({
@@ -38,26 +46,28 @@ const Login = ({ onLoginSuccess }) => {
             const response = await axiosInstance.post(
                 'auth/login',
                 requestData,
-                {
-                    withCredentials: true,
-                }
+                { withCredentials: true }
             );
 
-            if (response.data.statusCode === 200) {
-                localStorage.setItem(
-                    'accessToken',
-                    response.data.data.accessToken
-                );
-                localStorage.setItem(
-                    'refreshToken',
-                    response.data.data.refreshToken
-                );
-                Cookies.set('accessToken', response.data.data.accessToken);
-                Cookies.set('refreshToken', response.data.data.refreshToken);
+            const { accessToken, refreshToken } = response.data.data || {};
 
-                // Call the onLoginSuccess prop to update the authentication state
-                onLoginSuccess();
-                navigate('/chat');
+            if (response.data.statusCode === 200 && isCookieAllowed) {
+                localStorage.setItem('accessToken', accessToken);
+                localStorage.setItem('refreshToken', refreshToken);
+                Cookies.set('accessToken', accessToken);
+                Cookies.set('refreshToken', refreshToken);
+
+                if (!accessToken) {
+                    setError('Authentication failed. Please log in again.');
+                    navigate('/login');
+                } else {
+                    onLoginSuccess();
+                    navigate('/chat');
+                }
+            } else if (!isCookieAllowed) {
+                setError(
+                    'Cookie permission is required for login. Please enable cookies and try again.'
+                );
             }
         } catch (err) {
             setError(
@@ -72,6 +82,24 @@ const Login = ({ onLoginSuccess }) => {
     return (
         <div className="min-h-screen flex items-center justify-center px-4 bg-gray-900">
             <div className="max-w-md w-full space-y-8 p-8 bg-gray-800 rounded-lg shadow-2xl">
+                {/* Cookie Permission */}
+                {!isCookieAllowed && (
+                    <div
+                        className="bg-yellow-500/10 border border-yellow-500 text-yellow-500 px-4 py-3 rounded relative"
+                        role="alert"
+                    >
+                        <p className="text-sm">
+                            This app requires cookies for authentication.
+                        </p>
+                        <button
+                            onClick={handleCookiePermission}
+                            className="mt-2 text-blue-500 hover:text-blue-400"
+                        >
+                            Allow Cookies
+                        </button>
+                    </div>
+                )}
+
                 {/* Header */}
                 <div className="text-center">
                     <h2 className="mt-6 text-3xl font-bold text-white">
@@ -104,7 +132,6 @@ const Login = ({ onLoginSuccess }) => {
                     onSubmit={handleSubmit}
                 >
                     <div className="space-y-4">
-                        {/* Username/Email Field */}
                         <div>
                             <label
                                 htmlFor="userIdentifier"
@@ -126,7 +153,6 @@ const Login = ({ onLoginSuccess }) => {
                             </div>
                         </div>
 
-                        {/* Password Field */}
                         <div>
                             <label
                                 htmlFor="password"
@@ -149,7 +175,6 @@ const Login = ({ onLoginSuccess }) => {
                         </div>
                     </div>
 
-                    {/* Submit Button */}
                     <div>
                         <button
                             type="submit"

@@ -1,4 +1,3 @@
-// src/App.jsx
 import {
     BrowserRouter as Router,
     Routes,
@@ -22,8 +21,7 @@ const App = () => {
             const accessToken =
                 localStorage.getItem('accessToken') ||
                 Cookies.get('accessToken');
-            const hasToken = Boolean(accessToken);
-            setIsAuthenticated(hasToken);
+            setIsAuthenticated(!!accessToken);
             setIsLoading(false);
         };
         checkAuth();
@@ -82,7 +80,9 @@ const App = () => {
                                         replace
                                     />
                                 ) : (
-                                    <Signup />
+                                    <Signup
+                                        onSignupSuccess={handleLoginSuccess}
+                                    />
                                 )
                             }
                         />

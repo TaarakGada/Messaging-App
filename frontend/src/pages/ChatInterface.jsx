@@ -45,7 +45,6 @@ const ChatInterface = () => {
         fetchMessages();
     }, [id]);
 
-    // Real-time message listener
     useEffect(() => {
         if (socket) {
             const handleMessageReceive = ({ message, to, timestamp }) => {

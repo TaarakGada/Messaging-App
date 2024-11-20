@@ -8,38 +8,25 @@ const Signup = () => {
     const [formData, setFormData] = useState({
         username: '',
         email: '',
-        fullname: '',
         password: '',
-        avatar: null,
     });
-    const [avatarPreview, setAvatarPreview] = useState(null);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isCookieAllowed, setIsCookieAllowed] = useState(false);
     const navigate = useNavigate();
 
+    const handleCookiePermission = () => {
+        const allowCookies = window.confirm(
+            'This app requires permission to store cookies for authentication. Do you agree?'
+        );
+        setIsCookieAllowed(allowCookies);
+    };
+
     const handleChange = (e) => {
-        if (e.target.name === 'avatar') {
-            const file = e.target.files[0];
-            if (file) {
-                if (file.size > 5 * 1024 * 1024) {
-                    // 5MB limit
-                    setError('Image size should be less than 5MB');
-                    return;
-                }
-                setFormData({
-                    ...formData,
-                    avatar: file,
-                });
-                // Create preview URL
-                const previewUrl = URL.createObjectURL(file);
-                setAvatarPreview(previewUrl);
-            }
-        } else {
-            setFormData({
-                ...formData,
-                [e.target.name]: e.target.value,
-            });
-        }
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value,
+        });
         if (error) setError('');
     };
 
@@ -49,40 +36,36 @@ const Signup = () => {
         setError('');
 
         try {
-            const submitData = new FormData();
-            Object.keys(formData).forEach((key) => {
-                if (formData[key] !== null) {
-                    submitData.append(key, formData[key]);
-                }
+            const response = await axiosInstance.post('auth/signup', formData, {
+                withCredentials: true,
             });
 
-            const response = await axiosInstance.post(
-                'auth/register',
-                submitData,
-                {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                    },
-                    withCredentials: true,
-                }
-            );
+            const { accessToken, refreshToken } = response.data.data || {};
 
-            if (response.data.statusCode === 200) {
-                console.log(response.data);
-                localStorage.setItem('accessToken', response.data.accessToken);
-                localStorage.setItem(
-                    'refreshToken',
-                    response.data.refreshToken
+            if (response.data.statusCode === 201 && isCookieAllowed) {
+                localStorage.setItem('accessToken', accessToken);
+                localStorage.setItem('refreshToken', refreshToken);
+                Cookies.set('accessToken', accessToken);
+                Cookies.set('refreshToken', refreshToken);
+
+                if (!accessToken) {
+                    setError(
+                        'Account creation succeeded, but authentication failed. Please log in.'
+                    );
+                    navigate('/login');
+                } else {
+                    navigate('/chat');
+                }
+            } else if (!isCookieAllowed) {
+                setError(
+                    'Cookie permission is required for signup. Please enable cookies and try again.'
                 );
-                Cookies.set('accessToken', response.data.accessToken);
-                Cookies.set('refreshToken', response.data.refreshToken);
-                navigate('/chat');
             }
         } catch (err) {
-            const errorMessage =
+            setError(
                 err.response?.data?.message ||
-                'An error occurred during signup. Please try again.';
-            setError(errorMessage);
+                    'An error occurred during signup. Please try again.'
+            );
         } finally {
             setIsLoading(false);
         }
@@ -91,10 +74,28 @@ const Signup = () => {
     return (
         <div className="min-h-screen flex items-center justify-center px-4 bg-gray-900">
             <div className="max-w-md w-full space-y-8 p-8 bg-gray-800 rounded-lg shadow-2xl">
+                {/* Cookie Permission */}
+                {!isCookieAllowed && (
+                    <div
+                        className="bg-yellow-500/10 border border-yellow-500 text-yellow-500 px-4 py-3 rounded relative"
+                        role="alert"
+                    >
+                        <p className="text-sm">
+                            This app requires cookies for authentication.
+                        </p>
+                        <button
+                            onClick={handleCookiePermission}
+                            className="mt-2 text-blue-500 hover:text-blue-400"
+                        >
+                            Allow Cookies
+                        </button>
+                    </div>
+                )}
+
                 {/* Header */}
                 <div className="text-center">
                     <h2 className="mt-6 text-3xl font-bold text-white">
-                        Create Account
+                        Create Your Account
                     </h2>
                     <p className="mt-2 text-sm text-gray-400">
                         Already have an account?{' '}
@@ -123,28 +124,6 @@ const Signup = () => {
                     onSubmit={handleSubmit}
                 >
                     <div className="space-y-4">
-                        {/* Full Name Field */}
-                        <div>
-                            <label
-                                htmlFor="fullname"
-                                className="block text-sm font-medium text-gray-300"
-                            >
-                                Full Name
-                            </label>
-                            <div className="mt-1">
-                                <input
-                                    id="fullname"
-                                    name="fullname"
-                                    type="text"
-                                    required
-                                    value={formData.fullname}
-                                    onChange={handleChange}
-                                    className="appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Enter your full name"
-                                />
-                            </div>
-                        </div>
-
                         {/* Username Field */}
                         <div>
                             <label
@@ -162,7 +141,7 @@ const Signup = () => {
                                     value={formData.username}
                                     onChange={handleChange}
                                     className="appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Choose a username"
+                                    placeholder="Enter your username"
                                 />
                             </div>
                         </div>
@@ -206,63 +185,12 @@ const Signup = () => {
                                     value={formData.password}
                                     onChange={handleChange}
                                     className="appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Choose a password"
+                                    placeholder="Enter your password"
                                 />
-                            </div>
-                        </div>
-
-                        {/* Avatar Upload Field */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-300">
-                                Profile Picture
-                            </label>
-                            <div className="mt-1 flex items-center space-x-4">
-                                <div className="flex-shrink-0">
-                                    {avatarPreview ? (
-                                        <img
-                                            src={avatarPreview}
-                                            alt="Avatar preview"
-                                            className="h-12 w-12 rounded-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="h-12 w-12 rounded-full bg-gray-700 flex items-center justify-center">
-                                            <span className="text-gray-400">
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    strokeWidth={1.5}
-                                                    stroke="currentColor"
-                                                    className="w-6 h-6"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
-                                                    />
-                                                </svg>
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="flex-1">
-                                    <input
-                                        id="avatar"
-                                        name="avatar"
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleChange}
-                                        className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-medium file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:rounded-md"
-                                    />
-                                    <p className="mt-1 text-xs text-gray-400">
-                                        Max file size: 5MB
-                                    </p>
-                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Submit Button */}
                     <div>
                         <button
                             type="submit"
@@ -273,9 +201,7 @@ const Signup = () => {
                                     : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
                             } transition-colors`}
                         >
-                            {isLoading
-                                ? 'Creating account...'
-                                : 'Create account'}
+                            {isLoading ? 'Signing up...' : 'Sign up'}
                         </button>
                     </div>
                 </form>
